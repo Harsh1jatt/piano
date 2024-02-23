@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Recorder</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #controls {
+            text-align: center;
+        }
+
+        audio {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <button id="startButton">Start Recording</button>
+        <button id="stopButton" disabled>Stop Recording</button>
+    </div>
+
+    <audio controls></audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let audioChunks = [];
+            let mediaRecorder;
+            let startButton = document.getElementById('startButton');
+            let stopButton = document.getElementById('stopButton');
+            let audioElement = document.querySelector('audio');
+
+            startButton.addEventListener('click', startRecording);
+            stopButton.addEventListener('click', stopRecording);
+
+            async function startRecording() {
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(stream => {
+                        mediaRecorder = new MediaRecorder(stream);
+
+                        mediaRecorder.ondataavailable = event => {
+                            if (event.data.size > 0) {
+                                audioChunks.push(event.data);
+                            }
+                        };
+
+                        mediaRecorder.onstop = () => {
+                            let audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                            audioElement.src = URL.createObjectURL(audioBlob);
+                        };
+
+                        mediaRecorder.start();
+
+                        startButton.disabled = true;
+                        stopButton.disabled = false;
+                    })
+                    .catch(error => {
+                        console.error('Error accessing microphone:', error);
+                    });
+            }
+
+            function stopRecording() {
+                mediaRecorder.stop();
+                startButton.disabled = false;
+                stopButton.disabled = true;
+            }
+        });
+    </script>
+</body>
+</html>
